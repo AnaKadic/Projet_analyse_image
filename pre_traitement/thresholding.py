@@ -3,7 +3,7 @@ import numpy as np
 
 def apply_threshold(image):
     """
-    Améliore le seuillage pour renforcer encore plus les lignes des marches.
+    Améliore le seuillage pour renforcer et épaissir encore plus les lignes des marches.
     """
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -22,10 +22,10 @@ def apply_threshold(image):
     sobel_combined = cv2.bitwise_or(cv2.convertScaleAbs(sobel_x), cv2.convertScaleAbs(sobel_y))
     normalized_sobel = cv2.normalize(sobel_combined, None, 0, 255, cv2.NORM_MINMAX)
 
-    kernel_dilate = np.ones((2, 2), np.uint8)
-    thick_edges = cv2.dilate(normalized_sobel, kernel_dilate, iterations=2)
+    kernel_dilate = np.ones((2, 2), np.uint8)  # Augmenté
+    thick_edges = cv2.dilate(normalized_sobel, kernel_dilate, iterations=3)  # Plus d'itérations
 
-    kernel_close = np.ones((3, 3), np.uint8)
-    final_edges = cv2.morphologyEx(thick_edges, cv2.MORPH_CLOSE, kernel_close, iterations=1)
+    kernel_close = np.ones((3, 3), np.uint8)  # Plus grand noyau
+    final_edges = cv2.morphologyEx(thick_edges, cv2.MORPH_CLOSE, kernel_close, iterations=2)  # Plus d'itérations
 
     return final_edges

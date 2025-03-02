@@ -6,9 +6,11 @@ from preprocessing import preprocess_image
 from detection import detect_stair_rectangles
 from evaluation import evaluate_performance
 import numpy as np
-from pre_traitement.thresholding import apply_threshold  # Importer la fonction
-from pre_traitement.canny import apply_canny
-from pre_traitement.hough import detect_horizontal_lines
+from pre_traitement.thresholding import apply_threshold  # Seuillage
+from pre_traitement.canny import apply_canny  # Canny
+from pre_traitement.hough import detect_horizontal_lines  # Hough
+from pre_traitement.count_stairs import count_stairs  # ✅ Correction de l'import
+
 """
 # 🔧 Chemins des répertoires
 base_dir = os.path.expanduser("~/Documents/M1/s2/analyse d'image/Projet_analyse_image")
@@ -115,22 +117,30 @@ output_path = os.path.join(base_dir, "resultats_comparatif_groupes2_3.csv")
 results_df.to_csv(output_path, index=False)
 print(f"\n✅ Fichier de résultats enregistré : {output_path}")
 """
-# Charger l’image et appliquer un seuillage sur une imaege de notre choix 
+
 image_path = "/home/user/Documents/M1/s2/analyse d'image/Projet_analyse_image/images/Groupe 2/Groupe2_Image3.jpeg"
+
 image = cv2.imread(image_path)
 
+if image is None:
+    print(f"⚠️ Impossible de charger l’image : {image_path}")
+    exit()
 
 gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-#etape 1
+# 🔹 Étape 1 :
 thresholded_image = apply_threshold(image)
-# Étape 2 :
+
+# 🔹 Étape 2 : 
 edges_image = apply_canny(thresholded_image)
-#etape 3
-hough_image = detect_horizontal_lines(edges_image)
+
+# 🔹 Étape 3 :
+hough_image, detected_lines = detect_horizontal_lines(edges_image, min_length=80, min_y_gap=10)
 
 
-fig, axes = plt.subplots(1, 4, figsize=(10, 5))
+stair_count = count_stairs(image, detected_lines, y_threshold= 42, min_length=120, min_y_gap=15)
+
+fig, axes = plt.subplots(1, 5, figsize=(15, 5))
 
 axes[0].imshow(gray_image, cmap="gray")
 axes[0].set_title("Image en Niveaux de Gris")
@@ -147,5 +157,11 @@ axes[2].axis("off")
 axes[3].imshow(hough_image)
 axes[3].set_title("Lignes Hough (Horizontales)")
 axes[3].axis("off")
+
+axes[4].text(0.5, 0.5, f"Nombre de marches détectées : {stair_count}", 
+             fontsize=15, ha='center', va='center')
+axes[4].set_title("Comptage des Marches")
+axes[4].axis("off")
+
 plt.tight_layout()
 plt.show()
