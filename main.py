@@ -6,7 +6,9 @@ from preprocessing import preprocess_image
 from detection import detect_stair_rectangles
 from evaluation import evaluate_performance
 import numpy as np
+from pre_traitement.thresholding import apply_threshold  # Importer la fonction
 
+"""
 # 🔧 Chemins des répertoires
 base_dir = os.path.expanduser("~/Documents/M1/s2/analyse d'image/Projet_analyse_image")
 images_dir = os.path.join(base_dir, "images")
@@ -111,3 +113,26 @@ print(results_df[['Image', 'Groupe', 'Vérité Terrain', 'Marches détectées', 
 output_path = os.path.join(base_dir, "resultats_comparatif_groupes2_3.csv")
 results_df.to_csv(output_path, index=False)
 print(f"\n✅ Fichier de résultats enregistré : {output_path}")
+"""
+# Charger l’image et appliquer un seuillage sur une imaege de notre choix 
+image_path = "/home/user/Documents/M1/s2/analyse d'image/Projet_analyse_image/images/Groupe 2/Groupe2_Image3.jpeg"
+image = cv2.imread(image_path)
+
+
+gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+
+thresholded_image = apply_threshold(image)
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+axes[0].imshow(gray_image, cmap="gray")
+axes[0].set_title("Image en Niveaux de Gris")
+axes[0].axis("off")
+
+axes[1].imshow(thresholded_image, cmap="gray")
+axes[1].set_title("Image Seuillée (Corrigée)")
+axes[1].axis("off")
+
+plt.tight_layout()
+plt.show()
