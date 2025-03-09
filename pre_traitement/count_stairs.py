@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
 
-def count_stairs(image, detected_lines, y_threshold=30, min_length= 50, min_y_gap=25):
+def count_stairs(image, detected_lines, y_threshold=30, min_length=50, min_y_gap=25):
     """
-    Compte le nombre de marches en fusionnant plus fortement les lignes détectées.
+    Compte le nombre de marches en définissant l'horizontale comme les lignes parallèles les plus courantes.
     - detected_lines : liste des lignes détectées.
     - y_threshold : distance max entre deux lignes pour être fusionnées.
     - min_length : longueur minimale des lignes détectées.
@@ -14,14 +14,25 @@ def count_stairs(image, detected_lines, y_threshold=30, min_length= 50, min_y_ga
         print("⚠️ Aucune ligne détectée !")
         return 0
 
-    y_coordinates = []
-
-    # 🔹 1️⃣ Filtrer les lignes trop courtes et extraire `y`
+    # 🔹 1️⃣ Calculer les angles des lignes détectées
+    angles = []
     for line in detected_lines:
         if isinstance(line, (list, np.ndarray)) and len(line) == 4:
             x1, y1, x2, y2 = line
+            angle = np.degrees(np.arctan2(y2 - y1, x2 - x1))  # Angle en degrés
+            angles.append(angle)
 
+    # 🔹 2️⃣ Définir l'horizontale comme l'angle le plus courant (mode)
+    from scipy.stats import mode
+    most_common_angle = mode(angles, keepdims=True).mode[0]  # Angle le plus fréquent
+    print(f"Angle horizontal détecté : {most_common_angle} degrés")
 
+    # 🔹 3️⃣ Filtrer les lignes proches de l'horizontale détectée
+    angle_tolerance = 10  # Tolérance pour considérer une ligne comme horizontale
+    y_coordinates = []
+    for line, angle in zip(detected_lines, angles):
+        if abs(angle - most_common_angle) <= angle_tolerance:
+            x1, y1, x2, y2 = line
             length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
             if length >= min_length:  # Garder seulement les grandes lignes
                 y_coordinates.append((y1 + y2) // 2)  # Moyenne pour stabiliser
@@ -32,7 +43,7 @@ def count_stairs(image, detected_lines, y_threshold=30, min_length= 50, min_y_ga
 
     y_coordinates = sorted(y_coordinates, reverse=True)
 
-    # 🔹 3️⃣ Fusionner les lignes proches de manière plus agressive (clustering fort)
+    # 🔹 4️⃣ Fusionner les lignes proches de manière plus agressive (clustering fort)
     filtered_y = []
     cluster = []  # Temporaire pour regrouper les lignes proches
 
@@ -48,7 +59,7 @@ def count_stairs(image, detected_lines, y_threshold=30, min_length= 50, min_y_ga
     if cluster:
         filtered_y.append(int(np.median(cluster)))
 
-    # 🔹 4️⃣ Supprimer les lignes trop denses après fusion (éviter encore les doublons)
+    # 🔹 5️⃣ Supprimer les lignes trop denses après fusion (éviter encore les doublons)
     final_filtered_y = []
     for i, y in enumerate(filtered_y):
         if i == 0 or abs(y - final_filtered_y[-1]) > min_y_gap:

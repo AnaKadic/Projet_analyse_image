@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from pre_traitement.thresholding import apply_threshold
 from pre_traitement.canny import apply_canny
-from pre_traitement.hough import detect_horizontal_lines
+from pre_traitement.hough import detect_all_lines
 from pre_traitement.count_stairs import count_stairs
 
 # Chemins des répertoires (chemins relatifs)
@@ -31,7 +31,7 @@ def process_image(image_path, true_stairs):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     thresholded_image = apply_threshold(image)
     edges_image = apply_canny(thresholded_image)
-    hough_image, detected_lines = detect_horizontal_lines(edges_image, min_length=80, min_y_gap=10)
+    hough_image, detected_lines = detect_all_lines(edges_image, min_length=80)
     stair_count = count_stairs(image, detected_lines, y_threshold=42, min_length=120, min_y_gap=15)
 
     return stair_count
