@@ -61,23 +61,19 @@ for _, row in ground_truth.iterrows():  # Parcourir toutes les lignes du CSV
     else:
         print(f"Erreur : Image non trouvée : {image_path}")
 
-# Calcul du MAE global
+# Calcul du total des écarts absolus (MAE) et du total des marches en vérité terrain
 if detected_results:
-    mae_global = np.mean([result['Écart'] for result in detected_results])
-    print(f"\nErreur Absolue Moyenne (MAE) globale : {mae_global}")
-else:
-    print("Aucun résultat à évaluer.")
+    total_mae = sum([result['Écart'] for result in detected_results])
+    total_verite_terrain = sum([result['Vérité Terrain'] for result in detected_results])
 
-# Calcul de la moyenne des marches en vérité terrain
-if detected_results:
-    moyenne_verite_terrain = np.mean([result['Vérité Terrain'] for result in detected_results])
-    print(f"Moyenne des marches en vérité terrain : {moyenne_verite_terrain}")
+    print(f"\nTotal des écarts absolus (MAE) : {total_mae}")
+    print(f"Total des marches en vérité terrain : {total_verite_terrain}")
 
-    # Comparaison du MAE global avec la moyenne des marches en vérité terrain
+    # Comparaison du MAE total avec le total des marches en vérité terrain
     print(f"\nComparaison :")
-    print(f"MAE global : {mae_global}")
-    print(f"Moyenne des marches en vérité terrain : {moyenne_verite_terrain}")
-    print(f"MAE global représente {mae_global / moyenne_verite_terrain * 100:.2f}% de la moyenne des marches en vérité terrain.")
+    print(f"MAE total : {total_mae}")
+    print(f"Total des marches en vérité terrain : {total_verite_terrain}")
+    print(f"MAE total représente {total_mae / total_verite_terrain * 100:.2f}% du total des marches en vérité terrain.")
 else:
     print("Aucun résultat à évaluer.")
 
