@@ -61,19 +61,21 @@ for _, row in ground_truth.iterrows():  # Parcourir toutes les lignes du CSV
     else:
         print(f"Erreur : Image non trouvée : {image_path}")
 
-# Calcul du total des écarts absolus (MAE) et du total des marches en vérité terrain
+# Calcul du MAE (Mean Absolute Error)
 if detected_results:
     total_mae = sum([result['Écart'] for result in detected_results])
     total_verite_terrain = sum([result['Vérité Terrain'] for result in detected_results])
+    nombre_images = len(detected_results)  # Nombre total d'images traitées
 
-    print(f"\nTotal des écarts absolus (MAE) : {total_mae}")
+    mae = total_mae / nombre_images  # Vraie MAE (moyenne des écarts absolus)
+    print(f"\nErreur Absolue Moyenne (MAE) : {mae}")
     print(f"Total des marches en vérité terrain : {total_verite_terrain}")
 
-    # Comparaison du MAE total avec le total des marches en vérité terrain
+    # Comparaison du MAE avec le total des marches en vérité terrain
     print(f"\nComparaison :")
-    print(f"MAE total : {total_mae}")
+    print(f"MAE : {mae}")
     print(f"Total des marches en vérité terrain : {total_verite_terrain}")
-    print(f"MAE total représente {total_mae / total_verite_terrain * 100:.2f}% du total des marches en vérité terrain.")
+    print(f"MAE représente {mae / (total_verite_terrain / nombre_images) * 100:.2f}% de la moyenne des marches en vérité terrain.")
 else:
     print("Aucun résultat à évaluer.")
 
