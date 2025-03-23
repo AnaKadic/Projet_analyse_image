@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from preprocessing import preprocess_image
 from detection import detect_stair_rectangles
 from evaluation import evaluate_performance
+
+from sklearn.metrics import mean_absolute_error
 import numpy as np
 from pre_traitement.thresholding import apply_threshold  # Seuillage
 from pre_traitement.canny import apply_canny  # Canny
@@ -117,51 +119,68 @@ output_path = os.path.join(base_dir, "resultats_comparatif_groupes2_3.csv")
 results_df.to_csv(output_path, index=False)
 print(f"\n✅ Fichier de résultats enregistré : {output_path}")
 """
+# 📁 Dossiers
+base_folder = "/home/user/Documents/M1/s2/analyse d'image/Projet_analyse_image/images"
+annotations_path = "/home/user/Documents/M1/s2/analyse d'image/Projet_analyse_image/annotations/data annotations - Feuille 1.csv"
 
-image_path = "C:\M1\S2\image\Projet_analyse_image\images\Groupe 2\Groupe2_Image2.jpeg"
+# 📄 Charger la vérité terrain
+annotations_df = pd.read_csv(annotations_path, delimiter=",", encoding="utf-8")
+annotations_df.columns = ["Nom image", "Nombre de marches", "Identifiant équipe"]
 
-image = cv2.imread(image_path)
+# 🔍 Extensions autorisées
+extensions_autorisees = (".jpg", ".jpeg", ".png")
 
-if image is None:
-    print(f"⚠️ Impossible de charger l’image : {image_path}")
-    exit()
+# 🔁 Données pour MAE
+true_counts = []
+predicted_counts = []
+image_names = []
+differences = []
 
-gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+# 🔄 Parcours des images
+for root, _, files in os.walk(base_folder):
+    for file_name in files:
+        if not file_name.lower().endswith(extensions_autorisees):
+            continue
 
-# 🔹 Étape 1 :
-thresholded_image = apply_threshold(image)
+        image_path = os.path.join(root, file_name)
+        image = cv2.imread(image_path)
 
-# 🔹 Étape 2 : 
-edges_image = apply_canny(thresholded_image)
+        if image is None:
+            print(f"⚠️ Impossible de charger l’image : {image_path}")
+            continue
 
-# 🔹 Étape 3 :
-hough_image, detected_lines = detect_all_lines(edges_image, min_length=80)
+        print(f"📸 Traitement de : {file_name}")
 
+        # 🔍 Trouver la vérité terrain correspondante
+        match = annotations_df[annotations_df["Nom image"].str.lower() == file_name.lower()]
+        if match.empty:
+            print(f"⚠️ Pas d'annotation pour l'image : {file_name}")
+            continue
+        true = int(match["Nombre de marches"].values[0])
 
-stair_count = count_stairs(image, detected_lines, y_threshold= 42, min_length=120, min_y_gap=15)
+        # 🧪 Traitement
+        thresholded = apply_threshold(image)
+        edges = apply_canny(thresholded)
+        _, lines = detect_all_lines(edges, min_length=80)
+        predicted = count_stairs(image, lines, y_threshold=42, min_length=120, min_y_gap=15)
 
-fig, axes = plt.subplots(1, 5, figsize=(15, 5))
+        # 📊 Stocker les résultats
+        image_names.append(file_name)
+        true_counts.append(true)
+        predicted_counts.append(predicted)
+        differences.append(abs(true - predicted))
 
-axes[0].imshow(gray_image, cmap="gray")
-axes[0].set_title("Image en Niveaux de Gris")
-axes[0].axis("off")
+# 📏 Calcul du MAE
+mae = mean_absolute_error(true_counts, predicted_counts)
+print(f"\n📏 Erreur Absolue Moyenne (MAE) sur {len(predicted_counts)} images : {mae:.2f} marches")
 
-axes[1].imshow(thresholded_image, cmap="gray")
-axes[1].set_title("Image Seuillée (Corrigée)")
-axes[1].axis("off")
+# 💾 Sauvegarde des résultats
+df = pd.DataFrame({
+    "Image": image_names,
+    "Marches détectées": predicted_counts,
+    "Vérité Terrain": true_counts,
+    "Écart": differences
+})
 
-axes[2].imshow(edges_image, cmap="gray")
-axes[2].set_title("Contours après Canny")
-axes[2].axis("off")
-
-axes[3].imshow(hough_image)
-axes[3].set_title("Lignes Hough (Horizontales)")
-axes[3].axis("off")
-
-axes[4].text(0.5, 0.5, f"Nombre de marches détectées : {stair_count}", 
-             fontsize=15, ha='center', va='center')
-axes[4].set_title("Comptage des Marches")
-axes[4].axis("off")
-
-plt.tight_layout()
-plt.show()
+df.to_csv("resultats_marche_detectees.csv", index=False, encoding="utf-8")
+print("✅ Résultats enregistrés dans resultats_marche_detectees.csv")
