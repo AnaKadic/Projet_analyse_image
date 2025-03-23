@@ -8,7 +8,7 @@ from evaluation import evaluate_performance
 import numpy as np
 from pre_traitement.thresholding import apply_threshold  # Seuillage
 from pre_traitement.canny import apply_canny  # Canny
-from pre_traitement.hough import detect_horizontal_lines  # Hough
+from pre_traitement.hough import detect_all_lines  # Hough
 from pre_traitement.count_stairs import count_stairs  # ✅ Correction de l'import
 
 """
@@ -118,7 +118,7 @@ results_df.to_csv(output_path, index=False)
 print(f"\n✅ Fichier de résultats enregistré : {output_path}")
 """
 
-image_path = "/home/user/Documents/M1/s2/analyse d'image/Projet_analyse_image/images/Groupe 2/Groupe2_Image3.jpeg"
+image_path = "C:\M1\S2\image\Projet_analyse_image\images\Groupe 2\Groupe2_Image2.jpeg"
 
 image = cv2.imread(image_path)
 
@@ -135,7 +135,7 @@ thresholded_image = apply_threshold(image)
 edges_image = apply_canny(thresholded_image)
 
 # 🔹 Étape 3 :
-hough_image, detected_lines = detect_horizontal_lines(edges_image, min_length=80, min_y_gap=10)
+hough_image, detected_lines = detect_all_lines(edges_image, min_length=80)
 
 
 stair_count = count_stairs(image, detected_lines, y_threshold= 42, min_length=120, min_y_gap=15)
