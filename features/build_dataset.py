@@ -4,28 +4,23 @@ import pandas as pd
 import numpy as np
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-# 🔌 Imports de tes modules
-from features.analyse_image import analyse_image
+from features.extract_features_image import extract_features_image
 from heuristics.thresholding import apply_threshold
 from heuristics.canny import apply_canny
 from heuristics.hough import detect_all_lines
 from heuristics.count_stairs import count_stairs
 
-# 📁 Dossier & annotations
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 base_folder = "/home/user/Documents/M1/s2/analyse d'image/Projet_analyse_image/data/images"
 annotations_path = "/home/user/Documents/M1/s2/analyse d'image/Projet_analyse_image/data/annotations/data annotations - Feuille 1.csv"
 annotations_df = pd.read_csv(annotations_path, delimiter=",", encoding="utf-8")
 annotations_df.columns = ["Nom image", "Nombre de marches", "Identifiant équipe"]
 
-# 🔍 Extensions
 extensions_autorisees = (".jpg", ".jpeg", ".png")
 
-# 📦 Dataset final
 features_data = []
 
-# 🔄 Traitement des images
 for root, _, files in os.walk(base_folder):
     for file_name in files:
         if not file_name.lower().endswith(extensions_autorisees):
@@ -35,32 +30,28 @@ for root, _, files in os.walk(base_folder):
         image = cv2.imread(image_path)
 
         if image is None:
-            print(f"❌ Impossible de lire : {file_name}")
+            print(f"Impossible de lire : {file_name}")
             continue
 
-        print(f"📸 Analyse : {file_name}")
+        print(f" Analyse : {file_name}")
 
         # Analyse des features visuelles
-        infos = analyse_image(image)
+        infos = extract_features_image(image)
 
-        # Vérité terrain
         match = annotations_df[annotations_df["Nom image"].str.lower() == file_name.lower()]
         if match.empty:
-            print(f"⚠️ Pas d'annotation pour {file_name}")
+            print(f" Pas d'annotation pour {file_name}")
             continue
 
         nb_marches = int(match["Nombre de marches"].values[0])
 
-        # 🔍 Pipeline heuristique
         thresholded = apply_threshold(image)
         edges = apply_canny(thresholded)
         _, lines = detect_all_lines(edges, min_length=80)
         heuristique_pred = count_stairs(image, lines, y_threshold=42, min_length=120, min_y_gap=15)
 
-        # 🔧 Erreur
         erreur = nb_marches - heuristique_pred
 
-        # ➕ Ligne du dataset
         row = {
             "Nom image": file_name,
             "Luminosité": infos.get("Luminosité moyenne", 0),
@@ -74,7 +65,7 @@ for root, _, files in os.walk(base_folder):
         }
         features_data.append(row)
 
-# 💾 Sauvegarde CSV
+
 df = pd.DataFrame(features_data)
 df.to_csv("features_dataset_correction.csv", index=False, encoding="utf-8")
-print("✅ Dataset enregistré sous features_dataset_correction.csv")
+print(" Dataset enregistré sous features_dataset_correction.csv")

@@ -1,26 +1,48 @@
 import cv2
 import numpy as np
+from scipy.signal import find_peaks
+
+
+"""
+prétraitement d’image qui prépare une image d’escalier pour détecter les bords des marches, 
+
+Fonction 1: Cette fonction analyse globalement l’image pour adapter le traitement par la suite.
+            Ces indicateurs permettront d’adapter dynamiquement le prétraitement (filtre, seuillage, etc.).
+Fonction 2 : nettoie une image binaire en supprimant les petits composants non pertinents.
+                Analyse les composantes connexes de l’image (zones blanches reliées entre elles).
+    Pour chaque composant, elle garde uniquement ceux qui :
+
+        ont une largeur minimale,
+
+        une hauteur minimale,
+
+        un rapport largeur/hauteur (aspect ratio) suffisant.
+
+➡️ Cela permet de garder uniquement des formes allongées et horizontales, typiques des marches d’escalier.
+"""
 
 def analyse_image(image):
     """
-    Analyse les propriétés globales d'une image pour adapter le prétraitement.
+    Analyse les propriétés d'une image pour adapter le prétraitement.
+
+    Entrée :
+        - image : Image couleur chargée avec OpenCV 
+
+    Sortie :
+        - dictionnaire contenant : luminosité moyenne, contraste,  netteté, pourcentage de lignes verticales détectées
     """
     results = {}
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Luminosité moyenne
     mean_brightness = np.mean(gray)
     results["Trop lumineuse"] = mean_brightness > 180
     results["Trop sombre"] = mean_brightness < 50
 
-    # Contraste
     results["Faible contraste"] = gray.std() < 30
 
-    # Netteté
     laplacian = cv2.Laplacian(gray, cv2.CV_64F).var()
     results["Floue"] = laplacian < 50
 
-    # Orientation (via HoughLines)
     edges = cv2.Canny(gray, 50, 150)
     lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=100)
     if lines is not None:
@@ -33,6 +55,18 @@ def analyse_image(image):
     return results
 
 def filter_connected_components(image, min_width=40, min_height=2, min_aspect_ratio=3.0):
+    """
+    Filtre les composantes connexes sur une image binaire.
+
+    Entrée :
+        - image : Image binaire
+        - min_width : largeur minimale acceptée
+        - min_height : hauteur minimale acceptée
+        - min_aspect_ratio : rapport L/l minimal pour considérer un composant valide
+
+    Sortie :
+        - image binaire contenant uniquement les composantes filtrées
+    """
     output = np.zeros_like(image)
     num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(image, connectivity=8)
 
@@ -43,62 +77,90 @@ def filter_connected_components(image, min_width=40, min_height=2, min_aspect_ra
             output[labels == i] = 255
     return output
 
-def apply_threshold(image):
+def detect_marches_par_projection(binary_img, prominence=50, distance=15):
     """
-    Prétraitement dynamique basé sur les caractéristiques globales de l’image.
-    """
-    infos = analyse_image(image)  # 🔍 Analyse intelligente
+    Détecte les lignes horizontales significatives via projection verticale.
+    - prominence : force des pics détectés (proportion de pixels blancs).
+    - distance : espacement minimal entre pics (marches).
 
-    # 🔧 Luminosité (si trop claire)
+    Retourne : image filtrée contenant uniquement les lignes détectées.
+    """
+    projection = np.sum(binary_img == 255, axis=1)  # somme des pixels blancs par ligne
+    peaks, _ = find_peaks(projection, prominence=prominence, distance=distance)
+
+    result = np.zeros_like(binary_img)
+    for y in peaks:
+        result[max(0, y - 1):y + 2, :] = 255  # renforce la bande détectée
+
+    return result
+
+
+def apply_threshold(image):
+    infos = analyse_image(image)
+
     if infos["Trop lumineuse"]:
         image = cv2.convertScaleAbs(image, alpha=1.0, beta=-40)
-        # Gamma correction
         gamma = 1.5
         invGamma = 1.0 / gamma
         table = np.array([(i / 255.0) ** invGamma * 255 for i in range(256)]).astype("uint8")
         image = cv2.LUT(image, table)
 
-    # Conversion en gris
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Contraste CLAHE (si faible)
     if infos["Faible contraste"]:
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         gray = clahe.apply(gray)
 
-    # Flou → on évite d’accentuer les bords (filtrage léger)
     if not infos["Floue"]:
-        gray = cv2.bilateralFilter(gray, d=9, sigmaColor=75, sigmaSpace=75)
+        gray = cv2.bilateralFilter(gray, 9, 75, 75)
     else:
         gray = cv2.GaussianBlur(gray, (3, 3), 0)
 
-    # Seuillage
     _, otsu = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    adaptive = cv2.adaptiveThreshold(
-        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY, 15, 6
-    )
+    adaptive = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                     cv2.THRESH_BINARY, 15, 6)
     combined_thresh = cv2.bitwise_or(otsu, adaptive)
 
-    # Sobel
     sobel_x = cv2.Sobel(combined_thresh, cv2.CV_64F, 1, 0, ksize=3)
     sobel_y = cv2.Sobel(combined_thresh, cv2.CV_64F, 0, 1, ksize=3)
-    sobel = cv2.bitwise_or(cv2.convertScaleAbs(sobel_x), cv2.convertScaleAbs(sobel_y))
-    sobel_norm = cv2.normalize(sobel, None, 0, 255, cv2.NORM_MINMAX)
+    vertical_edges = cv2.convertScaleAbs(sobel_x)
+    horizontal_edges = cv2.convertScaleAbs(sobel_y)
 
-    # Morphologie
-    dilated = cv2.dilate(sobel_norm, np.ones((2, 2), np.uint8), iterations=3)
-    closed = cv2.morphologyEx(dilated, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=2)
+    is_top_down_view = infos["% lignes verticales"] > 70 and gray.std() < 50
 
-    # Filtrage composantes : attention si beaucoup de verticales (rampe ?)
-    if infos["% lignes verticales"] > 30:
-        final_edges = closed  # on évite un filtrage trop agressif
-    else:
+    if is_top_down_view:
+        print("Vue du dessus détectée : traitement spécial vertical.")
+        filtered = vertical_edges.copy()
+        filtered = cv2.morphologyEx(filtered, cv2.MORPH_OPEN, np.ones((3, 1), np.uint8), iterations=1)
+        filtered = cv2.morphologyEx(filtered, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=2)
+
         final_edges = filter_connected_components(
-            closed,
-            min_width=10,
-            min_height=1.5,
-            min_aspect_ratio=3.0
+            filtered,
+            min_width=2,
+            min_height=20,
+            min_aspect_ratio=0.2
         )
+        return final_edges
+
+    is_complex = infos["% lignes verticales"] < 10 and gray.std() > 40
+    sobel_combined = cv2.bitwise_or(horizontal_edges, vertical_edges)
+    sobel_norm = cv2.normalize(sobel_combined, None, 0, 255, cv2.NORM_MINMAX)
+
+    if is_complex:
+        morph = cv2.morphologyEx(horizontal_edges, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8), iterations=1)
+    else:
+        morph = sobel_norm.copy()
+
+    closed = cv2.morphologyEx(morph, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=2)
+
+    if is_complex:
+        final_edges = filter_connected_components(closed, min_width=20, min_height=2, min_aspect_ratio=4.0)
+    elif infos["% lignes verticales"] > 30:
+        final_edges = closed
+    else:
+        final_edges = filter_connected_components(closed, min_width=10, min_height=1.5, min_aspect_ratio=3.0)
+
+    if not is_top_down_view:
+        final_edges = detect_marches_par_projection(final_edges, prominence=50, distance=15)
 
     return final_edges

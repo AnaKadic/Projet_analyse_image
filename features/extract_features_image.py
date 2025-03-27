@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def analyse_image(image):
+def extract_features_image(image):
     results = {}
 
     # 1. Luminosité moyenne

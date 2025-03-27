@@ -1,141 +1,171 @@
-import os
 import cv2
+import os
 import pandas as pd
 import numpy as np
 import joblib
 from sklearn.metrics import mean_absolute_error
+import matplotlib.pyplot as plt
 
 # 🔌 Modules perso
 from heuristics.thresholding import apply_threshold
 from heuristics.canny import apply_canny
 from heuristics.hough import detect_all_lines
 from heuristics.count_stairs import count_stairs
-from features.analyse_image import analyse_image
+from features.extract_features_image import extract_features_image
 
-# 📁 Dossiers (chemins relatifs)
-base_folder = os.path.join("data", "images")
-annotations_path = os.path.join("data", "annotations", "data annotations - Feuille 1.csv")
-model_path = os.path.join("models", "modele_correction_erreur.pkl")
-results_path = os.path.join("results", "resultats_fusion_heuristique_ml.csv")
+# 📁 Dossiers
+base_folder = "data/images"
+test_csv_path = "results/splits/test.csv"
+annotations_path = "data/annotations/data annotations - Feuille 1.csv"
+model_path = "models/modele_correction_erreur.pkl"
+output_dir = "results"
+visu_dir = os.path.join(output_dir, "analyses_visuelles")
+os.makedirs(output_dir, exist_ok=True)
+os.makedirs(visu_dir, exist_ok=True)
 
-# 📄 Charger annotations
-annotations_df = pd.read_csv(annotations_path, delimiter=",", encoding="utf-8")
+# 📄 Charger le jeu de test et les annotations
+test_df = pd.read_csv(test_csv_path)
+annotations_df = pd.read_csv(annotations_path)
 annotations_df.columns = ["Nom image", "Nombre de marches", "Identifiant équipe"]
+merged_df = test_df.merge(annotations_df[["Nom image", "Nombre de marches"]], on="Nom image", how="left")
 
-# 🔍 Extensions autorisées
-extensions_autorisees = (".jpg", ".jpeg", ".png")
-
-# 🔄 Charger le modèle de correction
+print(f"✅ Test set chargé avec annotations : {test_csv_path}")
 correction_model = joblib.load(model_path)
-print("✅ Modèle de correction chargé")
+print("✅ Modèle chargé.")
 
 # 📊 Résultats
 image_names = []
 true_counts = []
 predicted_counts = []
 differences = []
+ignored_images = []
 
-# 🔁 Parcours
-for root, _, files in os.walk(base_folder):
-    for file_name in files:
-        if not file_name.lower().endswith(extensions_autorisees):
-            continue
+# 🔍 Recherche récursive d'image
+def find_image_path(filename, root_dir):
+    for root, _, files in os.walk(root_dir):
+        if filename in files:
+            return os.path.join(root, filename)
+    return None
 
-        image_path = os.path.join(root, file_name)
-        image = cv2.imread(image_path)
-        if image is None:
-            print(f"❌ Impossible de lire : {file_name}")
-            continue
+# 🖼️ Fonction de visualisation (style 2x2)
+def save_visualization(original, thresholded, edges, lines, file_name, true, prediction, save_path):
+    hough_image = np.zeros((*edges.shape, 3), dtype=np.uint8)
+    if lines is not None:
+        for x1, y1, x2, y2 in lines:
+            cv2.line(hough_image, (x1, y1), (x2, y2), (0, 255, 0), 1)
 
-        print(f"\n📸 Traitement de : {file_name}")
+    fig, axs = plt.subplots(2, 2, figsize=(10, 7))
+    fig.suptitle("Analyse complète", fontsize=16)
 
-        # 🔍 Vérité terrain
-        match = annotations_df[annotations_df["Nom image"].str.lower() == file_name.lower()]
-        if match.empty:
-            print(f"⚠️ Pas d'annotation pour l'image : {file_name}")
-            continue
-        true = int(match["Nombre de marches"].values[0])
+    axs[0, 0].imshow(cv2.cvtColor(original, cv2.COLOR_BGR2RGB))
+    axs[0, 0].set_title("Originale")
+    axs[0, 0].axis("off")
 
-        # 🔬 Étape 1 – Pipeline heuristique
-        thresholded = apply_threshold(image)
-        edges = apply_canny(thresholded)
-        _, lines = detect_all_lines(edges, min_length=80)
-        heuristique_pred = count_stairs(image, lines, y_threshold=42, min_length=120, min_y_gap=15)
+    axs[0, 1].imshow(thresholded, cmap="gray")
+    axs[0, 1].set_title("Prétraitement")
+    axs[0, 1].axis("off")
 
-        # 🔬 Étape 2 – Extraire features
-        features = analyse_image(image)
-        feature_vector = np.array([
-            features.get("Luminosité moyenne", 0),
-            features.get("Contraste global (std)", 0),
-            features.get("Niveau de netteté (Laplacian)", 0),
-            features.get("% lignes verticales", 0),
-            features.get("% lignes horizontales", 0),
-            features.get("Nb lignes détectées", 0),
-            heuristique_pred  # Ajout de la prédiction heuristique comme feature
-        ]).reshape(1, -1)
+    axs[1, 0].imshow(edges, cmap="gray")
+    axs[1, 0].set_title("Canny")
+    axs[1, 0].axis("off")
 
-        # 🔮 Étape 3 – Correction par ML
-        correction = correction_model.predict(feature_vector)[0]
-        final_prediction = int(round(heuristique_pred + correction))
+    axs[1, 1].imshow(hough_image)
+    axs[1, 1].set_title(f"Lignes Hough ({len(lines) if lines is not None else 0})")
+    axs[1, 1].axis("off")
 
-        print(f"🔢 Heuristique : {heuristique_pred} | Correction ML : {correction:.2f} ➡️ Final : {final_prediction}")
+    plt.figtext(0.5, 0.02, f"{file_name} — Vérité : {true} | Prédiction finale : {prediction}",
+                ha="center", fontsize=12, color="red")
+    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+    plt.savefig(save_path)
+    plt.close()
 
-        # 🧾 Stockage
-        image_names.append(file_name)
-        true_counts.append(true)
-        predicted_counts.append(final_prediction)
-        differences.append(abs(true - final_prediction))
+# 🔁 Parcours du test set
+for idx, row in merged_df.iterrows():
+    file_name = row["Nom image"]
+    true = row["Nombre de marches"]
 
-# 📏 MAE
-mae = mean_absolute_error(true_counts, predicted_counts)
-print(f"\n📏 MAE (fusion heuristique + ML) sur {len(predicted_counts)} images : {mae:.2f} marches")
+    if pd.isna(true):
+        ignored_images.append(file_name)
+        continue
 
-# 💾 Sauvegarde CSV
-df = pd.DataFrame({
-    "Image": image_names,
-    "Prédiction finale": predicted_counts,
-    "Vérité terrain": true_counts,
-    "Écart absolu": differences
-})
+    image_path = find_image_path(file_name, base_folder)
+    if image_path is None or not os.path.exists(image_path):
+        ignored_images.append(file_name)
+        continue
 
-# ✅ Créer le dossier 'results' s'il n'existe pas
-os.makedirs("results", exist_ok=True)
+    image = cv2.imread(image_path)
+    if image is None:
+        ignored_images.append(file_name)
+        continue
 
-# 🔽 Chemin du fichier à sauvegarder
-output_path = os.path.join("results", "resultats_fusion_heuristique_ml.csv")
-df.to_csv(output_path, index=False, encoding="utf-8")
-print(f"✅ Résultats enregistrés dans {output_path}")
+    print(f"\n📸 Traitement de : {file_name}")
 
-"""
+    # Pipeline
+    thresholded = apply_threshold(image)
+    edges = apply_canny(thresholded)
+    _, lines = detect_all_lines(edges, min_length=80)
+    heuristique_pred = count_stairs(image, lines, y_threshold=42, min_length=120, min_y_gap=15)
 
-# 📁 Dossier à analyser
-base_folder = "/home/user/Documents/M1/s2/analyse d'image/Projet_analyse_image/images"
-extensions_autorisees = (".jpg", ".jpeg", ".png")
+    # ML
+    features = extract_features_image(image)
+    feature_vector = np.array([
+        features.get("Luminosité moyenne", 0),
+        features.get("Contraste global (std)", 0),
+        features.get("Niveau de netteté (Laplacian)", 0),
+        features.get("% lignes verticales", 0),
+        features.get("% lignes horizontales", 0),
+        features.get("Nb lignes détectées", 0),
+        heuristique_pred
+    ]).reshape(1, -1)
 
-# 📊 Résultats à stocker
-analysis_results = []
+    correction = correction_model.predict(feature_vector)[0]
+    final_prediction = int(round(heuristique_pred + correction))
 
-# 🔁 Analyse de toutes les images
-for root, _, files in os.walk(base_folder):
-    for file_name in files:
-        if not file_name.lower().endswith(extensions_autorisees):
-            continue
+    print(f"🔢 Heuristique : {heuristique_pred} | Correction ML : {correction:.2f} ➡️ Final : {final_prediction} | Vérité terrain : {int(true)}")
 
-        image_path = os.path.join(root, file_name)
-        image = cv2.imread(image_path)
+    # 🧪 Comparaison directe
+    if heuristique_pred == int(true):
+        print("✅ Heuristique exacte 🎯")
+    elif abs(heuristique_pred - int(true)) < abs(final_prediction - int(true)):
+        print("📉 ML a dégradé le résultat")
+    elif abs(heuristique_pred - int(true)) > abs(final_prediction - int(true)):
+        print("📈 ML a amélioré la prédiction")
+    else:
+        print("➖ Même écart heuristique/ML")
 
-        if image is None:
-            print(f"⚠️ Impossible de charger l’image : {image_path}")
-            continue
 
-        print(f"🔍 Analyse de : {file_name}")
-        infos = analyse_image(image)
-        infos["Image"] = file_name
-        analysis_results.append(infos)
+    # 📊 Résultats
+    image_names.append(file_name)
+    true_counts.append(int(true))
+    predicted_counts.append(final_prediction)
+    differences.append(abs(int(true) - final_prediction))
 
-# 💾 Sauvegarde dans un fichier CSV
-df_analysis = pd.DataFrame(analysis_results)
-df_analysis.to_csv("analyse_images_globales.csv", index=False, encoding="utf-8")
-print("✅ Analyse complète enregistrée dans analyse_images_globales.csv")
+    # 🖼️ Sauvegarde visualisation (8 premières uniquement)
+    if len(image_names) <= 15:
+        save_path = os.path.join(visu_dir, f"{os.path.splitext(file_name)[0]}_analyse.png")
+        save_visualization(image, thresholded, edges, lines, file_name, int(true), final_prediction, save_path)
 
-"""
+# ✅ Résumé
+if true_counts:
+    mae = mean_absolute_error(true_counts, predicted_counts)
+    print(f"\n📏 MAE (heuristique + ML) sur {len(predicted_counts)} images : {mae:.2f} marches")
+
+    df = pd.DataFrame({
+        "Image": image_names,
+        "Prédiction finale": predicted_counts,
+        "Vérité terrain": true_counts,
+        "Écart absolu": differences
+    })
+    output_csv = os.path.join(output_dir, "resultats_test_seulement.csv")
+    df.to_csv(output_csv, index=False, encoding="utf-8")
+    print(f"✅ Résultats enregistrés dans : {output_csv}")
+else:
+    print("\n❌ Aucune image n’a pu être traitée correctement.")
+
+# 🚫 Images ignorées
+if ignored_images:
+    ignored_path = os.path.join(output_dir, "images_non_lues.txt")
+    with open(ignored_path, "w") as f:
+        for img in ignored_images:
+            f.write(img + "\n")
+    print(f"\n⚠️ {len(ignored_images)} image(s) ignorée(s), voir : {ignored_path}")
