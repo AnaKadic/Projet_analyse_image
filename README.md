@@ -161,7 +161,7 @@ Le système a été évalué sur un ensemble d’images de test représentant di
 - **Testé sur l'ensemble de test**
 - **Gain moyen par rapport à l’heuristique seule** : entre **15 % et 25 %** d’erreur corrigée
 
-#### rédiction :
+#### Prédiction :
 
 | Image               | Vérité terrain | Heuristique | ML Correction | Final |
 |---------------------|----------------|-------------|---------------|--------|
