@@ -15,7 +15,7 @@ Objectif -> Créer un système capable de détecter et compter le nombre de marc
 
 1. [Structure du code](#structure-du-projet)
 2. [Dépendances](#dépendances)
-3. [Installation & Exécution](#installation--exécution)
+3. [Exécution](#installation--exécution)
 4. [Fonctionnement du système](#fonctionnement-du-système)
     - [Prétraitement](#prétraitement)
     - [Analyse des lignes](#analyse-des-lignes)
@@ -72,7 +72,7 @@ Ce projet utilise Python 3.8+ avec les bibliothèques suivantes :
 
 
 ---
-## 3. Installation & Exécution
+## 3. Exécution
 1. Génération du dataset (optionnel)
 
 Uniquement si vous souhaitez reconstruire les descripteurs visuels à partir des images :
@@ -150,6 +150,7 @@ Un modèle de **Random Forest Regressor** est entraîné pour **prédire l'erreu
 
 Le modèle choisi est ensuite utilisé pour **corriger** les prédictions heuristiques.
 
+---
 ### 5. Resultats
 
 
