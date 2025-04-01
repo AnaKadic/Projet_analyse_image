@@ -29,7 +29,7 @@ Projet_analyse_image/ <br>
 ├── main.py      <br>                  
 ├── README.md     <br>               
 ├── data/<br>
-│   ├── images/     <br>               
+│   ├── images/                   
 │   └── annotations/       <br>        
 │       └── data annotations.csv  <br>
 ├── features/<br>
