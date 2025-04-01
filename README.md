@@ -77,19 +77,25 @@ Ce projet utilise Python 3.8+ avec les bibliothèques suivantes :
 
 Uniquement si vous souhaitez reconstruire les descripteurs visuels à partir des images :
 
-```python features/build_dataset.py```
+```
+python features/build_dataset.py
+```
 
 2. Entraînement d’un nouveau modèle (optionnel)
 
 Si vous souhaitez réentraîner un modèle de correction depuis zéro :
 
-```python training/train_model.py```
+```
+python training/train_model.py
+```
 
 3. Exécution :
 
 Tout est déjà prêt (dataset + modèle), exécutez simplement :
 
-```python main.py```
+```
+python main.py
+```
 
 ---
 ## 4. Fonctionnement du système
