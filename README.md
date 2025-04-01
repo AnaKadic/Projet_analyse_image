@@ -1,5 +1,13 @@
 # Projet_analyse_image
 
+## Auteurs
+
+Ce projet a été réalisé dans le cadre d'un travail universitaire par :
+
+- Anaïs Kadic  
+- Titouan Brierre  
+- Wided Dhfallah
+
 Objectif -> Créer un système capable de détecter et compter le nombre de marches sur une photo d’escalier, à partir d’un smartphone, en combinant heuristique et Machine Learning.
 
 
