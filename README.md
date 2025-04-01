@@ -3,7 +3,7 @@
 Objectif -> Créer un système capable de détecter et compter le nombre de marches sur une photo d’escalier, à partir d’un smartphone, en combinant heuristique et Machine Learning.
 
 
-## 🗂️ Sommaire
+##  Sommaire
 
 1. [Structure du projet](#structure-du-projet)
 2. [Dépendances](#dépendances)
@@ -51,7 +51,7 @@ Projet_analyse_image/ <br>
 │       ├── val.csv<br>
 │       └── test.csv<br>
 
-## 📦 Dépendances
+## Dépendances
 
 Ce projet utilise Python 3.8+ avec les bibliothèques suivantes :
 
@@ -63,10 +63,6 @@ Ce projet utilise Python 3.8+ avec les bibliothèques suivantes :
 - `scipy`
 - `joblib`
 
-
-
-## 5. Fonctionnement du système
-Il s'agit d'une approche hybride combinant traitement d'image et correction via machine learning .
 
 ---
 ## Installation & Exécution
@@ -88,6 +84,11 @@ python training/train_model.py
 Tout est déjà prêt (dataset + modèle), exécutez simplement :
 
 python main.py
+
+---
+## 5. Fonctionnement du système
+Il s'agit d'une approche hybride combinant traitement d'image et correction via machine learning .
+
 
 ### 🔹 5.1 Prétraitement
 
