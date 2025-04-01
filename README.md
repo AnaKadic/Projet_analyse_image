@@ -21,8 +21,6 @@ Objectif -> Créer un système capable de détecter et compter le nombre de marc
     - [Analyse des lignes](#analyse-des-lignes)
     - [Extraction de features](#extraction-de-features)
     - [Machine Learning](#modèle-machine-learning)
-5. [Résultats](#résultats)
-6. [Conclusion & Améliorations](#conclusion--améliorations)
 
 ---
 
