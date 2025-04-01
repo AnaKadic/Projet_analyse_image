@@ -1,21 +1,23 @@
 import cv2
 import numpy as np
-"""
-Détecter combien de marches d’escalier il y a dans une image 
-en comptant les lignes horizontales qui les représentent.
 
-"""
+
 def count_stairs(image, detected_lines, y_threshold=30, min_length=50, min_y_gap=25):
     """
-    Compte le nombre de marches à partir des lignes détectées (Hough), 
-    avec fusion des lignes proches pour éviter les doublons.
+    Compte automatiquement les marches d'un escalier en analysant les lignes horizontales détectées.
 
-    - y_threshold : regroupe les lignes proches.
-    - min_length : longueur minimale d’une ligne à considérer.
-    - min_y_gap : écart vertical minimal pour valider une marche.
+    Entrées :
+        - image 
+        - detected_lines : liste des lignes détectées (coordonnées [x1,y1,x2,y2]).
+        - y_threshold : seuil pour fusionner les lignes proches verticalement.
+        - min_length : longueur minimale.
+        - min_y_gap : distance verticale minimale entre deux marches.
+
+    Sortie :
+        - Nombre entier correspondant au nombre de marches détectées.
     """
     if detected_lines is None or len(detected_lines) == 0:
-        print("⚠️ Aucune ligne détectée !")
+        print("Aucune ligne détectée !")
         return 0
 
     angles = []
@@ -40,7 +42,7 @@ def count_stairs(image, detected_lines, y_threshold=30, min_length=50, min_y_gap
                 y_coordinates.append((y1 + y2) // 2)
 
     if len(y_coordinates) == 0:
-        print("⚠️ Aucune ligne horizontale valide trouvée !")
+        print(" Aucune ligne horizontale valide trouvée .")
         return 0
 
     y_coordinates = sorted(y_coordinates, reverse=True)
@@ -61,5 +63,5 @@ def count_stairs(image, detected_lines, y_threshold=30, min_length=50, min_y_gap
             final_filtered_y.append(y)
 
     stair_count = len(final_filtered_y)
-    print(f"🔢 Nombre de marches détectées : {stair_count}")
+    print(f"Nombre de marches détectées : {stair_count}")
     return stair_count

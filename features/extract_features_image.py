@@ -16,12 +16,12 @@ def extract_features_image(image):
     results["Contraste global (std)"] = round(contrast, 2)
     results["Faible contraste"] = contrast < 30
 
-    # 3. Flou (détection avec Laplacien)
+    # 3. détection avec Laplacien
     laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
     results["Niveau de netteté (Laplacian)"] = round(laplacian_var, 2)
     results["Floue"] = laplacian_var < 50
 
-    # 4. Orientation dominante (Hough Transform)
+    # 4. Hough Transform
     edges = cv2.Canny(gray, 50, 150)
     lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=100)
 

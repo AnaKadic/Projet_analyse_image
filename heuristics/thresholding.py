@@ -3,24 +3,6 @@ import numpy as np
 from scipy.signal import find_peaks
 
 
-"""
-prétraitement d’image qui prépare une image d’escalier pour détecter les bords des marches, 
-
-Fonction 1: Cette fonction analyse globalement l’image pour adapter le traitement par la suite.
-            Ces indicateurs permettront d’adapter dynamiquement le prétraitement (filtre, seuillage, etc.).
-Fonction 2 : nettoie une image binaire en supprimant les petits composants non pertinents.
-                Analyse les composantes connexes de l’image (zones blanches reliées entre elles).
-    Pour chaque composant, elle garde uniquement ceux qui :
-
-        ont une largeur minimale,
-
-        une hauteur minimale,
-
-        un rapport largeur/hauteur (aspect ratio) suffisant.
-
-➡️ Cela permet de garder uniquement des formes allongées et horizontales, typiques des marches d’escalier.
-"""
-
 def analyse_image(image):
     """
     Analyse les propriétés d'une image pour adapter le prétraitement.
@@ -29,7 +11,7 @@ def analyse_image(image):
         - image : Image couleur chargée avec OpenCV 
 
     Sortie :
-        - dictionnaire contenant : luminosité moyenne, contraste,  netteté, pourcentage de lignes verticales détectées
+        - dict : luminosité moyenne, contraste,  netteté, pourcentage de lignes verticales détectées
     """
     results = {}
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -90,12 +72,21 @@ def detect_marches_par_projection(binary_img, prominence=50, distance=15):
 
     result = np.zeros_like(binary_img)
     for y in peaks:
-        result[max(0, y - 1):y + 2, :] = 255  # renforce la bande détectée
+        result[max(0, y - 1):y + 2, :] = 255 
 
     return result
 
 
 def apply_threshold(image):
+    """
+    Prétraitement et adapte les traitements selon ses caractéristiques.
+
+    Entrée :
+        - image 
+
+    Sortie :
+        - Image binaire filtrée avec les lignes.
+    """
     infos = analyse_image(image)
 
     if infos["Trop lumineuse"]:

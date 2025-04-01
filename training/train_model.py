@@ -32,7 +32,7 @@ def cross_validate_model(model, X, y, cv=5):
 def save_model(model, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     joblib.dump(model, path)
-    print(f"\n✅ Modèle sauvegardé dans : {path}")
+    print(f"\nModèle sauvegardé dans : {path}")
 
 
 def plot_model_mae_summary(csv_path, save_path):
@@ -52,12 +52,12 @@ def plot_model_mae_summary(csv_path, save_path):
 
     plt.tight_layout()
     plt.savefig(save_path)
-    print(f"📊 Barplot sauvegardé dans : {save_path}")
+    print(f" Barplot sauvegardé dans : {save_path}")
     plt.close()
 
 
 def grid_search(X, y, save_path):
-    print("🔍 Lancement du Grid Search...\n")
+    print(" Lancement du Grid Search...\n")
     results = []
     best_mae = float("inf")
     best_model = None
@@ -88,7 +88,7 @@ def grid_search(X, y, save_path):
                     }
                     results.append(config)
 
-                    print(f"✅ {model_name} | max_depth={max_depth}, min_samples_leaf={min_samples_leaf}, max_features={max_features}")
+                    print(f" {model_name} | max_depth={max_depth}, min_samples_leaf={min_samples_leaf}, max_features={max_features}")
                     print(f"   ➤ MAE moy. : {mean_mae:.2f} | ± {std_mae:.2f}\n")
 
                     if mean_mae < best_mae:
@@ -98,9 +98,9 @@ def grid_search(X, y, save_path):
 
     df_results = pd.DataFrame(results)
     df_results.to_csv(save_path, index=False)
-    print(f"📁 Résultats complets sauvegardés dans : {save_path}\n")
+    print(f" Résultats complets sauvegardés dans : {save_path}\n")
 
-    print("🎯 Meilleure configuration :")
+    print(" Meilleure configuration :")
     print(best_params)
     print(f"   ➤ MAE moy. : {best_mae:.2f}\n")
 
@@ -110,8 +110,8 @@ def grid_search(X, y, save_path):
 
 def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    data_path = os.path.join(root, "features", "features_dataset_correction.csv")
-    model_path = os.path.join(root, "models", "modele_correction_erreur.pkl")
+    data_path = os.path.join(root, "features", "features_dataset.csv")
+    model_path = os.path.join(root, "models", "modele_correction.pkl")
     results_dir = os.path.join(root, "results")
     os.makedirs(results_dir, exist_ok=True)
 
@@ -120,11 +120,11 @@ def main():
 
     X, y, full_df = load_data(data_path)
 
-    # ⚠️ Triple split : 70% train / 15% val / 15% test
+    # Triple split : 70% train / 15% val / 15% test
     X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=0.15, random_state=42)
     X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=0.176, random_state=42)  # ≈ 15%
 
-    # 📁 Sauvegarder les splits dans /results/splits/
+    #  Sauvegarder les splits dans /results/splits/
     split_dir = os.path.join(results_dir, "splits")
     os.makedirs(split_dir, exist_ok=True)
 
@@ -138,15 +138,15 @@ def main():
     save_split(X_val, y_val, full_df, "val.csv")
     save_split(X_test, y_test, full_df, "test.csv")
 
-    print(f"📂 Fichiers de split sauvegardés dans : {split_dir}\n")
+    print(f" Fichiers de split sauvegardés dans : {split_dir}\n")
 
-    # 🔎 Grid search + entraînement
+    #  Grid search + entraînement
     best_model = grid_search(X_train, y_train, results_csv)
 
-    print("\n📊 Évaluation sur validation :")
+    print("\n Évaluation sur validation :")
     evaluate_model(best_model, X_val, y_val, label="Validation")
 
-    print("\n📊 Évaluation finale sur test :")
+    print("\n Évaluation finale sur test :")
     evaluate_model(best_model, X_test, y_test, label="Test")
 
     save_model(best_model, model_path)

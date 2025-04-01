@@ -4,7 +4,11 @@ import numpy as np
 def apply_canny(image):
     """
     Applique l'algorithme de Canny après le seuillage.
-    - Se base sur l’image déjà seuillée pour extraire les contours.
+    Entrée :
+        - image : image prétraitée.
+
+    Sortie :
+        - image binaire avec contours renforcés.
     """
     if len(image.shape) == 3:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

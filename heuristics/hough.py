@@ -6,9 +6,9 @@ def detect_all_lines(edges, min_length=150, max_gap=30, threshold=50, dilate=Tru
     Détecte toutes les lignes dans une image avec HoughLinesP.
     
     Params :
-        - edges : image binaire (edges)
+        - edges : image binaire
         - min_length : longueur minimale d'une ligne
-        - max_gap : distance entre segments pour être connectés
+        - max_gap : distance entre segments
         - threshold : nombre de votes pour qu'une ligne soit retenue
         - dilate : booléen, appliquer ou non une dilatation
 

@@ -3,7 +3,6 @@ import cv2
 import pandas as pd
 import numpy as np
 import sys
-
 from features.extract_features_image import extract_features_image
 from heuristics.thresholding import apply_threshold
 from heuristics.canny import apply_canny
@@ -67,5 +66,5 @@ for root, _, files in os.walk(base_folder):
 
 
 df = pd.DataFrame(features_data)
-df.to_csv("features_dataset_correction.csv", index=False, encoding="utf-8")
-print(" Dataset enregistré sous features_dataset_correction.csv")
+df.to_csv("features_dataset.csv", index=False, encoding="utf-8")
+print(" Dataset enregistré sous features_dataset.csv")
