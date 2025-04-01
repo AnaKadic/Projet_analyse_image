@@ -40,11 +40,11 @@ Projet_analyse_image/ <br>
 │   ├── thresholding.py            <br>
 │   ├── canny.py                <br>  
 │   ├── hough.py                <br>   
-│   └── count_stairs.py            <br>
+│   └── count_stairs.py            
 ├── metrics/<br>
-│   ├── confusionMatrice.py <br>
-│   └── graph.py<br>
-├── models/           <br>
+│   ├── confusionMatrice.py 
+│   └── graph.py
+├── models/           
 │   └── modele_correction.pkl  # Modèle entraîné sauvegardé <br>
 ├── training/ <br>
 │   └── train_model.py    <br>
