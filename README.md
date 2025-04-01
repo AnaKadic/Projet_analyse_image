@@ -84,7 +84,6 @@ Si vous souhaitez réentraîner un modèle de correction depuis zéro :
 
 python training/train_model.py
 
----
 3. Exécution :
 
 Tout est déjà prêt (dataset + modèle), exécutez simplement :
@@ -150,8 +149,33 @@ Un modèle de **Random Forest Regressor** est entraîné pour **prédire l'erreu
 
 Le modèle choisi est ensuite utilisé pour **corriger** les prédictions heuristiques.
 
+### 6. Resultats
 
-python main.py
+
+Le système a été évalué sur un ensemble d’images de test représentant différentes conditions (lumière, angle, flou...).
+
+#### Résumé :
+
+- **MAE** : ~ **4 marches**
+- **R² (Score de détermination)** : valeur comprise entre **0.75 et 0.85** selon les splits
+- **Testé sur l'ensemble de test**
+- **Gain moyen par rapport à l’heuristique seule** : entre **15 % et 25 %** d’erreur corrigée
+
+#### rédiction :
+
+| Image               | Vérité terrain | Heuristique | ML Correction | Final |
+|---------------------|----------------|-------------|---------------|--------|
+| Groupe1_Image9.jpg  | 9              | 6           | +4.28         | **10** |
+| Groupe5_image10.jpg | 14              | 9          | +1.20        | **10**  |
+
+#### Visualisation :
+
+On peut visulise dans dans `results/analyses_visuelles/` pour chaque image :
+- Image originale
+- Prétraitement (binarisation)
+- Détection de contours (Canny)
+- Lignes détectées (Hough)
+
 
 
 ---
