@@ -2,7 +2,7 @@
 
 ## Auteurs
 
-Ce projet a été réalisé dans le cadre d'un travail universitaire par :
+Ce projet a été réalisé par :
 
 - Anaïs Kadic  
 - Titouan Brierre  
