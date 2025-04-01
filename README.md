@@ -13,7 +13,7 @@ Objectif -> Créer un système capable de détecter et compter le nombre de marc
 
 ##  Sommaire
 
-1. [Structure du projet](#structure-du-projet)
+1. [Structure du code](#structure-du-projet)
 2. [Dépendances](#dépendances)
 3. [Installation & Exécution](#installation--exécution)
 4. [Fonctionnement du système](#fonctionnement-du-système)
@@ -21,10 +21,10 @@ Objectif -> Créer un système capable de détecter et compter le nombre de marc
     - [Analyse des lignes](#analyse-des-lignes)
     - [Extraction de features](#extraction-de-features)
     - [Machine Learning](#modèle-machine-learning)
-
+5. [Résultats](#fonctionnement-du-système)
 ---
 
-### Structure du code
+### 1. Structure du code
 Projet_analyse_image/ <br> 
 ├── main.py      <br>                  
 ├── README.md     <br>               
@@ -57,7 +57,8 @@ Projet_analyse_image/ <br>
 │       ├── val.csv<br>
 │       └── test.csv<br>
 
-## Dépendances
+---
+## 2. Dépendances
 
 Ce projet utilise Python 3.8+ avec les bibliothèques suivantes :
 
@@ -71,7 +72,7 @@ Ce projet utilise Python 3.8+ avec les bibliothèques suivantes :
 
 
 ---
-## Installation & Exécution
+## 3. Installation & Exécution
 1. Génération du dataset (optionnel)
 
 Uniquement si vous souhaitez reconstruire les descripteurs visuels à partir des images :
@@ -91,11 +92,11 @@ Tout est déjà prêt (dataset + modèle), exécutez simplement :
 python main.py
 
 ---
-## 5. Fonctionnement du système
+## 4. Fonctionnement du système
 Il s'agit d'une approche hybride combinant traitement d'image et correction via machine learning .
 
 
-### 🔹 5.1 Prétraitement
+### 🔹 4.1 Prétraitement
 
 pour améliorer la lisibilité on mes en place:
 
@@ -106,7 +107,7 @@ pour améliorer la lisibilité on mes en place:
 
 ---
 
-### 🔹 5.2 Analyse des lignes
+### 🔹 4.2 Analyse des lignes
 
 Une fois l'image prétraitée, on applique :
 
@@ -117,7 +118,7 @@ Une fois l'image prétraitée, on applique :
 
 ---
 
-### 🔹 5.3 Extraction de features
+### 🔹 4.3 Extraction de features
 
 Pour chaque image, des **descripteurs visuels** sont extraits afin d'entraîner un modèle de correction :
 
@@ -132,7 +133,7 @@ Ces valeurs sont ensuite stockées dans un fichier `.csv`.
 
 ---
 
-### 🔹 5.4 Modèle Machine Learning
+### 🔹 4.4 Modèle Machine Learning
 
 Un modèle de **Random Forest Regressor** est entraîné pour **prédire l'erreur** commise par l'approche heuristique.
 
@@ -149,7 +150,7 @@ Un modèle de **Random Forest Regressor** est entraîné pour **prédire l'erreu
 
 Le modèle choisi est ensuite utilisé pour **corriger** les prédictions heuristiques.
 
-### 6. Resultats
+### 5. Resultats
 
 
 Le système a été évalué sur un ensemble d’images de test représentant différentes conditions (lumière, angle, flou...).
